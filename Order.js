@@ -3,36 +3,34 @@ const bodyParser = require('body-parser');
 const redis = require('ioredis');
 
 const app = express();
-const order = new redis();
 
-// Middleware
+const client = redis.createClient();
 app.use(bodyParser.json());
 
-// Add, Update, Delete Order Info
-app.post('/order', (req, res) => {
-  const { MsgType, OperationType, TenantId, OMSId, OrderType, Token, OrderId, OrderPrice, OrderQty, ClientID, ClientName, Remark } = req.body;
+app.post('/client', (req, res) => {
+  const { MsgType, OperationType, TenantId, OMSId, ClientID, ClientName, Remark } = req.body;
 
   // Check message type
-  if (MsgType !== 1120) {
+  if (MsgType !== 1121) {
     return res.status(400).send('Invalid message type');
   }
 
   // Check operation type
-  if (OperationType === 100) { // Add order
-    const key = `${TenantId}_${OMSId}_${ClientID}_${Token}:${OrderId}`; // Modify key format
-    const orderInfo =req.body;
-    order.hmset(key, orderInfo, (err, reply) => { // Use client.hmset instead of hashName
+  if (OperationType === 100 ) { 
+    const key = `${TenantId}_${OMSId}:${ClientID}`; 
+    const clientInfo = req.body;
+    client.hmset(key, clientInfo, (err, reply) => {
       if (err) {
         console.error(err);
-        res.status(500).send('Error storing order info in Redis');
+        res.status(500).send('Error storing client info in Redis');
       } else {
-        res.status(201).send('Order info stored successfully');
+        res.status(201).send('Client info stored successfully');
       }
     });
   } else if (OperationType === 101) { // Update order
-    const key = `${TenantId}_${OMSId}_${ClientID}_${Token}:${OrderId}`; // Modify key format
-    const orderInfo = req.body;
-    order.hmset(key, orderInfo, (err, reply) => { // Use client.hmset instead of hashName
+    const key = `${TenantId}_${OMSId}:${ClientID}`;  // Modify key format
+    const clientInfo = req.body;
+    client.hmset(key, clientInfo, (err, reply) => {// Use client.hmset instead of hashName
       if (err) {
         console.error(err);
         res.status(500).send('Error updating order info in Redis');
@@ -40,38 +38,38 @@ app.post('/order', (req, res) => {
         res.status(200).send('Order info updated successfully');
       }
     });
-  } else if (OperationType === 102) {
-    const { TenantId, OMSId, ClientID, Token, OrderId } = req.body;
-    const key = `${TenantId}_${OMSId}_${ClientID}_${Token}:${OrderId}`; // Modify key format
-    order.del(key, (err, reply) => { // Use client.del to delete the key
+  } else if (OperationType === 102) { // Delete client
+    const key = `${TenantId}_${OMSId}:${ClientID}`; // Combine identifiers
+    client.del(key, (err, reply) => {
       if (err) {
         console.error(err);
-        res.status(500).send('Error deleting order info from Redis');
+        res.status(500).send('Error deleting client info from Redis');
       } else {
         if (reply === 1) {
-          res.status(200).send('Order info deleted successfully');
+          res.status(200).send('Client info deleted successfully');
         } else {
-          res.status(404).send('Order info not found');
+          res.status(404).send('Client info not found');
         }
       }
     });
-  } else if (OperationType === 103) {
-    if (!OrderId) {
-      return res.status(400).json({ error: 'OrderId is required' });
+  } else if (OperationType === 103) { 
+    // Get client
+    if (!ClientID) {
+      return res.status(400).json({ error: 'ClientId is required' });
     }
-    const key = `${TenantId}_${OMSId}_${ClientID}_${Token}:${OrderId}`; 
-    order.hgetall(key, (err, orderData) => { 
+    const key = `${TenantId}_${OMSId}:${ClientID}`;
+    client.hgetall(key, (err, clientInfo) => {
       if (err) {
         console.error('Redis error:', err);
         return res.status(500).json({ error: 'Internal server error' });
       }
-      if (!orderData) {
-        return res.status(404).json({ error: 'Order data not found' });
+      if (!clientInfo) {
+        return res.status(404).json({ error: 'Client data not found' });
       }
-      res.json(orderData);
+      res.json(clientInfo);
     });
-  } else if(OperationType===104){
-    order.keys('[0-9]_[0-9]_[0-9]*', (err, keys) => {
+  } else if (OperationType === 104) { 
+    client.keys('[0-9]_[0-9]:*', (err, keys) => {
       if (err) {
           console.error('Redis error:', err);
           return res.status(500).json({ error: 'Internal server error' });
@@ -81,7 +79,7 @@ app.post('/order', (req, res) => {
       }
       const getAllDataPromises = keys.map(key => {
           return new Promise((resolve, reject) => {
-            order.hgetall(key, (err, data) => {
+              client.hgetall(key, (err, data) => {
                   if (err) {
                       reject(err);
                   } else {
@@ -98,10 +96,12 @@ app.post('/order', (req, res) => {
               console.error('Redis error:', err);
               res.status(500).json({ error: 'Internal server error' });
           });
-  });}else {
+  });
+  } else {
     res.status(400).send('Invalid operation type');
   }
 });
+
 
 // Start the server
 const PORT = process.env.PORT || 3000;
