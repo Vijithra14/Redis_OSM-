@@ -8,7 +8,7 @@ const client = redis.createClient();
 
 app.use(bodyParser.json());
 
-app.post('/client', (req, res) => {
+app.post('/api', (req, res) => {
   const { MsgType, OperationType, TenantId, OMSId, ClientID, ClientName, Remark } = req.body;
 
   // Check message type
