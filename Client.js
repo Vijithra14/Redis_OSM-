@@ -29,9 +29,9 @@ app.post('/api', (req, res) => {
       }
     });
   } else if (OperationType === 101) { // Update order
-    const key = `${TenantId}_${OMSId}:${ClientID}`;  // Modify key format
+    const key = `${TenantId}_${OMSId}:${ClientID}`;  
     const clientInfo = req.body;
-    client.hmset(key, clientInfo, (err, reply) => {// Use client.hmset instead of hashName
+    client.hmset(key, clientInfo, (err, reply) => {
       if (err) {
         console.error(err);
         res.status(500).send('Error updating order info in Redis');
@@ -40,7 +40,7 @@ app.post('/api', (req, res) => {
       }
     });
   } else if (OperationType === 102) { // Delete client
-    const key = `${TenantId}_${OMSId}:${ClientID}`; // Combine identifiers
+    const key = `${TenantId}_${OMSId}:${ClientID}`; 
     client.del(key, (err, reply) => {
       if (err) {
         console.error(err);
