@@ -5,7 +5,6 @@ const redis = require('ioredis');
 const app = express();
 const order = new redis();
 
-// Middleware
 app.use(bodyParser.json());
 
 // Add, Update, Delete Order Info
