@@ -9,7 +9,7 @@ const order = new redis();
 app.use(bodyParser.json());
 
 // Add, Update, Delete Order Info
-app.post('/order', (req, res) => {
+app.post('/api', (req, res) => {
   const { MsgType, OperationType, TenantId, OMSId, OrderType, Token, OrderId, OrderPrice, OrderQty, ClientID, ClientName, Remark } = req.body;
 
   // Check message type
