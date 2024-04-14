@@ -16,3 +16,7 @@ rl.question('Enter the channel name: ', (channel) => {
     rl.close();
   });
 });
+rl.on('close', () => {
+  redis.quit();
+  console.log('Exiting...');
+});
