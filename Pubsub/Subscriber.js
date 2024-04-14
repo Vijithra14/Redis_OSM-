@@ -28,3 +28,7 @@ rl.question('Enter the channel name you want to subscribe to: ', (channel) => {
     }
   });
 });
+rl.on('close', () => {
+  redis.quit();
+  console.log('Exiting...');
+});
